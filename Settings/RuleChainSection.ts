@@ -37,8 +37,10 @@ export default class RuleChainSection {
                         this.plugin.settings.ruleChains.push({
                             name: "New Rule",
                             steps: [],
-                            active: true
+                            active: true,
+                            continueOnFailure: true // Default on as requested
                         });
+
                         await this.plugin.saveData(this.plugin.settings);
                         this.display();
                     });
@@ -75,20 +77,26 @@ export default class RuleChainSection {
         controlsDiv.style.display = "flex";
         controlsDiv.style.gap = "5px";
 
-        // Active Toggle
-        const activeToggle = controlsDiv.createEl("input", { type: "checkbox" });
-        activeToggle.checked = chain.active;
-        activeToggle.onclick = async () => {
-            chain.active = activeToggle.checked;
-            await this.plugin.saveData(this.plugin.settings);
-        };
-
         // Up Button
         const upBtn = controlsDiv.createEl("button", { text: "↑" });
         upBtn.disabled = index === 0;
         upBtn.onclick = async () => {
             this.moveRule(index, -1);
         };
+
+        // Active Toggle
+        const activeToggle = controlsDiv.createEl("input", { type: "checkbox" });
+        activeToggle.title = "Active";
+        activeToggle.checked = chain.active;
+        activeToggle.onclick = async () => {
+            chain.active = activeToggle.checked;
+            await this.plugin.saveData(this.plugin.settings);
+        };
+
+
+
+
+
 
         // Down Button
         const downBtn = controlsDiv.createEl("button", { text: "↓" });
@@ -150,6 +158,16 @@ export default class RuleChainSection {
             await this.plugin.saveData(this.plugin.settings);
             this.display(); // re-render to show/hide key input
         };
+
+        // Optional Toggle
+        const optParams = { type: "checkbox", title: "Optional: If not found, skip step instead of failing rule" };
+        const optionalCb = stepDiv.createEl("input", optParams);
+        optionalCb.checked = !!step.optional;
+        optionalCb.onclick = async () => {
+            step.optional = optionalCb.checked;
+            await this.plugin.saveData(this.plugin.settings);
+        };
+
 
         // YAML Key Input (only if type is yaml)
         if (step.type === "yaml") {

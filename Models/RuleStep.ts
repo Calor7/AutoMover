@@ -12,4 +12,9 @@ export interface RuleStep {
      * The folder to append to the path
      */
     folder: string;
+    /**
+     * If true, the step will be skipped if it doesn't match, instead of failing the chain
+     */
+    optional?: boolean;
 }
+

@@ -43,10 +43,19 @@ class ChainMatcherUtil {
         for (const step of chain.steps) {
             const stepResult = this.evaluateStep(file, frontmatter, tags, step);
 
-            // If a step fails, the whole chain fails (for now, assuming AND logic)
+            // If a step fails
             if (stepResult === null) {
+                if (step.optional) {
+                    continue;
+                }
+                // If the chain allows partial match globally (legacy/migration support) or if step is optional?
+                // Actually, let's stick to per-step as requested.
+                // But wait, should I keep chain.continueOnFailure as a fallback or remove it?
+                // The user said "now i just want the optional checkbox". I'll remove the chain constraint.
                 return null;
             }
+
+
 
             // Append the result to the path
             // Ensure we handle slashes correctly
