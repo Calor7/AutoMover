@@ -1,41 +1,28 @@
-import type AutoMoverPlugin from "main";
 import type { ExclusionRule } from "Models/ExclusionRule";
-import type { MovingRule } from "Models/MovingRule";
-import { ProjectRule } from "Models/ProjectRule";
+import type { RuleChain } from "Models/RuleChain";
+import type AutoMoverPlugin from "main";
 
 export interface AutoMoverSettings {
   moveOnOpen: boolean;
-  // moveOnSave: boolean;
-  movingRules: MovingRule[];
   exclusionRules: ExclusionRule[];
-  tagRules: MovingRule[];
-  projectRules: ProjectRule[];
+  ruleChains: RuleChain[];
   automaticMoving: boolean;
   timer: number | null; // in miliseconds
   collapseSections: {
     tutorial: boolean;
-    movingRules: boolean;
     exclusionRules: boolean;
-    tagRules: boolean;
-    projectRules: boolean;
   };
 }
 
-export const DEFAULT_SETTINGS: Partial<AutoMoverSettings> = {
+export const DEFAULT_SETTINGS: AutoMoverSettings = {
   moveOnOpen: true,
-  // moveOnSave: true,
-  movingRules: [],
   exclusionRules: [],
-  tagRules: [],
-  projectRules: [],
+  ruleChains: [],
   automaticMoving: false,
   timer: null,
   collapseSections: {
     tutorial: false,
-    movingRules: false,
     exclusionRules: false,
-    tagRules: false,
-    projectRules: false,
   },
 };
 

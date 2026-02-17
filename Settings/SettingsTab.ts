@@ -3,10 +3,7 @@ import timerUtil from "Utils/TimerUtil";
 import type AutoMoverPlugin from "main";
 import { type App, PluginSettingTab, Setting } from "obsidian";
 import { exclusionSection } from "./ExclusionSection";
-import movingRuleSection from "./MovingRuleSection";
-import { tagSection } from "./TagSection";
-import { groupCollapsed } from "console";
-import { projectSection } from "./ProjectSection";
+import RuleChainSection from "./RuleChainSection";
 
 export class SettingsTab extends PluginSettingTab {
   plugin: AutoMoverPlugin;
@@ -72,8 +69,8 @@ export class SettingsTab extends PluginSettingTab {
       .setName("Automatic moving")
       .setDesc(
         `Execute a timed event that goes through all the files and moves them according to the rules specified below.
-		 The formatting is hh:mm:ss (if set 00:05:00 it will execute every 5 minutes).
-	     If the timer is set to 0, the automatic moving will do nothing.`,
+ 		 The formatting is hh:mm:ss (if set 00:05:00 it will execute every 5 minutes).
+ 	     If the timer is set to 0, the automatic moving will do nothing.`,
       )
       .setClass("timer-setting")
       .addToggle((cb) =>
@@ -96,70 +93,15 @@ export class SettingsTab extends PluginSettingTab {
           }),
       );
 
-    // TUTORIAL START
-    /**
-     * Instead of using the default .setting-item class I created a custom class to add other styling,
-     * with the inclusion of the relevant styles from the .setting-item class
-     */
-    const tutorialContainer = containerEl.createDiv({
-      cls: "moving_rules_container",
-    });
+    // TUTORIAL (Simplified for now or removed as Rules have changed?)
+    // Keeping it simple since logic changed significantly.
+    // Maybe new tutorial needed? For now, I'll stick to the Rules Section.
 
-    // Class used from obdsidian's css for consistency
-    const tutorialDetails = tutorialContainer.createEl("details", {});
-    tutorialDetails.createEl("summary", { text: "Tutorial", cls: ["setting-item-heading"] });
+    // New Rule Chain Section
+    const ruleChainSection = new RuleChainSection(this.app, this.plugin, containerEl);
+    ruleChainSection.display();
 
-    tutorialDetails.open = !this.plugin.settings.collapseSections.tutorial;
-    tutorialDetails.addEventListener("toggle", async () => {
-      this.plugin.settings.collapseSections.tutorial = !tutorialDetails.open;
-      await this.plugin.saveData(this.plugin.settings);
-    });
-
-    const tutorialDetailsContainer = tutorialDetails.createDiv({});
-
-    /**
-     * Rule description and tutorial
-     */
-    const description = tutorialDetailsContainer.createDiv();
-
-    description.createSpan({
-      text: "This plugin allows you to move files to a specified folder based on the file name.",
-    });
-    description.createEl("br", {});
-    description.createSpan({
-      text: "If you have multiple rules referencing the same file, the first rule will be applied.",
-    });
-    description.createEl("br", {});
-    description.createSpan({
-      text: "Usage of regex groups is supported. To use them in the folder name, use $1, $2, etc. to reference the group.",
-    });
-
-    /**
-     * Examples
-     */
-    description.createEl("br", {});
-    description.createEl("br", {});
-    description.createSpan({ text: "Examples: ", cls: "rule_title" });
-
-    description.createEl("br", {});
-    description.createSpan({
-      text: "To move files containing 'Scroll' to a folder named 'Scrolls': ",
-    });
-    const example1 = description.createDiv({ cls: "rule margig_right" });
-    example1.createSpan({ text: "Scroll", cls: "rule_title" });
-    example1.createSpan({ text: "Scrolls", cls: "rule_title" });
-
-    description.createSpan({
-      text: "To move files containing the word 'Scroll' and a number to space -> to a folder named 'Scrolls' under the subfolder of the scroll number: ",
-    });
-    const example2 = description.createDiv({ cls: "rule margig_right" });
-    example2.createSpan({ text: "Scroll (\\d+)", cls: "rule_title" });
-    example2.createSpan({ text: "Scrolls/$1", cls: "rule_title" });
-    // TUTORIAL END
-
-    movingRuleSection(containerEl, this.plugin, this.display);
-    tagSection(containerEl, this.plugin, this.display);
+    // Exclusion Rules (Keeping these)
     exclusionSection(containerEl, this.plugin, this.display);
-    projectSection(containerEl, this.plugin, this.display);
   };
 }
