@@ -56,9 +56,20 @@ export default function movingRuleSection(containerEl: HTMLElement, plugin: Auto
    */
   for (const rule of plugin.settings.movingRules) {
     const child = ruleList.createDiv({ cls: "rule" });
+
+    child.createEl("input", {
+      value: rule.yaml || "",
+      cls: "rule_input",
+      placeholder: "YAML Key",
+    }).onchange = (e) => {
+      rule.yaml = (e.target as HTMLInputElement).value;
+      debouncedSave();
+    };
+
     child.createEl("input", {
       value: rule.regex,
       cls: "rule_input",
+      placeholder: "Regex",
     }).onchange = (e) => {
       rule.regex = (e.target as HTMLInputElement).value;
       debouncedSave();
@@ -66,6 +77,7 @@ export default function movingRuleSection(containerEl: HTMLElement, plugin: Auto
     child.createEl("input", {
       value: rule.folder,
       cls: "rule_input",
+      placeholder: "Destination Folder",
     }).onchange = (e) => {
       rule.folder = (e.target as HTMLInputElement).value;
       debouncedSave();

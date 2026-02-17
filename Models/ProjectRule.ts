@@ -22,10 +22,24 @@ export class ProjectRule {
    */
   public rules: Array<MovingRule>;
   public collapsed: boolean;
-  constructor(projectName?: string, folder?: string, rules?: Array<MovingRule>, collapsed?: boolean) {
+  /**
+   * The yaml key to use for matching
+   * e.g. "Project"
+   * e.g. "Database"
+   */
+  public yaml: string;
+
+  constructor(
+    projectName?: string,
+    folder?: string,
+    rules?: Array<MovingRule>,
+    collapsed?: boolean,
+    yaml?: string,
+  ) {
     this.projectName = projectName || "";
     this.folder = folder || "";
     this.rules = rules || [];
     this.collapsed = collapsed || false;
+    this.yaml = yaml || "";
   }
 }

@@ -5,7 +5,7 @@ class MovingUtil {
   private static instance: MovingUtil;
   private app: App;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): MovingUtil {
     if (!MovingUtil.instance) {
@@ -47,18 +47,30 @@ class MovingUtil {
    * @returns void
    */
   public moveFile(file: TFile, newPath: string): void {
-    if (this.isFolder(newPath)) {
-      this.app.vault.rename(file, `${newPath}/${file.name}`);
+    // Ensure we don't end with a slash for folder checking, but we use it for file moving?
+    // Actually, Obsidian's rename takes the full new path including filename.
+
+    // If the newPath comes in as "Folder/Subfolder/", we need to strip the slash to check if the folder exists.
+    const folderPath = newPath.endsWith("/") ? newPath.slice(0, -1) : newPath;
+
+    if (this.isFolder(folderPath)) {
+      // Folder exists
+      const destinationFile = newPath.endsWith("/") ? `${newPath}${file.name}` : `${newPath}/${file.name}`;
+      this.app.vault.rename(file, destinationFile);
     } else {
       new Notice(
-        `Invalid destination path\n${newPath} is not a folder!\nCreating requested folder.`,
-        5000,
+        `Creating folder: ${folderPath}`,
+        2000,
       );
-      console.error(
-        `Invalid destination path\n${newPath} is not a folder!\nCreating requested folder.`,
-      );
-      this.createMissingFolders(newPath).then(() => {
-        this.app.vault.rename(file, `${newPath}/${file.name}`);
+      // console.log(`Creating folder: ${folderPath}`);
+
+      this.createMissingFolders(folderPath).then((success) => {
+        if (success) {
+          const destinationFile = newPath.endsWith("/") ? `${newPath}${file.name}` : `${newPath}/${file.name}`;
+          this.app.vault.rename(file, destinationFile);
+        } else {
+          console.error("Failed to create folders for move.");
+        }
       });
     }
   }
@@ -114,20 +126,29 @@ class MovingUtil {
    * @returns void
    */
   private async createMissingFolders(path: string): Promise<boolean> {
-    const splitPath = this.splitPath(path);
+    // Determine if we need to remove a trailing slash
+    const cleanPath = path.endsWith("/") ? path.slice(0, -1) : path;
+    const splitPath = cleanPath.split("/");
+
     let currentPath = "";
     for (const folder of splitPath) {
-      currentPath += folder;
-      if (!this.isFolder(currentPath)) {
-        await this.app.vault.createFolder(path);
+      if (currentPath !== "") {
+        currentPath += "/";
       }
-      currentPath += "/";
-    }
-    if (this.isFolder(path)) {
-      return true;
+      currentPath += folder;
+
+      const abstractFile = this.app.vault.getAbstractFileByPath(currentPath);
+
+      if (!abstractFile) {
+        await this.app.vault.createFolder(currentPath);
+      } else if (!(abstractFile instanceof TFolder)) {
+        // It exists but it's a file, not a folder!
+        console.error(`Error: ${currentPath} exists but is not a folder.`);
+        return false;
+      }
     }
 
-    return false;
+    return true;
   }
 }
 

@@ -1,9 +1,10 @@
+import type { App, TFile } from "obsidian";
 import { ProjectRule } from "Models/ProjectRule";
 
 class ProjectMatcherUtil {
   private static instance: ProjectMatcherUtil;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ProjectMatcherUtil {
     if (!ProjectMatcherUtil.instance) {
@@ -17,12 +18,42 @@ class ProjectMatcherUtil {
    * If no rule matches, returns null
    * @param projectName
    * @param projectRules
-   * @returns ProjectRule | null
+   * @returns { rule: ProjectRule, matches: RegExpMatchArray | null } | null
    */
-  public getMatchingProjectRule(projectName: string, projectRules: ProjectRule[]): ProjectRule | null {
+  public getMatchingProjectRule(file: TFile, app: App, projectRules: ProjectRule[]): { rule: ProjectRule, matches: RegExpMatchArray | null } | null {
+    const cache = app.metadataCache.getFileCache(file);
+    const frontmatter = cache?.frontmatter;
+
+    if (!frontmatter) return null;
+
     for (const projectRule of projectRules) {
-      if (projectRule.projectName === projectName) {
-        return projectRule;
+      // Default to "Project" if no yaml key is specified
+      const yamlKey = projectRule.yaml || "Project";
+
+      // Check both capitalized and lowercase for default Project key for backward compatibility
+      // But only if the key is "Project"
+      let projectValue: string | undefined;
+
+      if (yamlKey === "Project") {
+        projectValue = frontmatter["Project"] || frontmatter["project"];
+      } else {
+        projectValue = frontmatter[yamlKey];
+      }
+
+      if (!projectValue) continue;
+
+      if (projectValue === projectRule.projectName) {
+        return { rule: projectRule, matches: null };
+      }
+
+      try {
+        const regex = new RegExp(projectRule.projectName);
+        const matches = regex.exec(projectValue);
+        if (matches) {
+          return { rule: projectRule, matches: matches };
+        }
+      } catch (e) {
+        console.warn(`Invalid regex in project rule: ${projectRule.projectName}`, e);
       }
     }
     return null;
@@ -36,8 +67,16 @@ class ProjectMatcherUtil {
    * @param subPath
    * @returns string
    */
-  public constructProjectDestinationPath(projectRule: ProjectRule, subPath: string): string {
+  public constructProjectDestinationPath(projectRule: ProjectRule, subPath: string, matches: RegExpMatchArray | null = null): string {
     let projectFolder = projectRule.folder;
+
+    if (matches) {
+      // Replace regex groups $1, $2, etc.
+      for (let i = 1; i < matches.length; i++) {
+        projectFolder = projectFolder.replace(`$${i}`, matches[i] || "");
+      }
+    }
+
     if (!projectFolder.endsWith("/")) {
       projectFolder += "/";
     }

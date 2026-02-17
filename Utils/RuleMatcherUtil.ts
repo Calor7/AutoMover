@@ -1,12 +1,12 @@
 import type { MovingRule } from "Models/MovingRule";
 import { ProjectRule } from "Models/ProjectRule";
-import type { TagCache, TFile } from "obsidian";
+import type { App, TagCache, TFile } from "obsidian";
 
 class RuleMatcherUtil {
   private static instance: RuleMatcherUtil;
   private regexCache: Map<string, RegExp> = new Map();
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): RuleMatcherUtil {
     if (!RuleMatcherUtil.instance) {
@@ -35,7 +35,7 @@ class RuleMatcherUtil {
    * @param rules
    * @returns MovingRule | null
    */
-  public getMatchingRuleByName(file: TFile, rules: MovingRule[]): MovingRule | null {
+  public getMatchingRuleByName(file: TFile, app: App, rules: MovingRule[]): MovingRule | null {
     for (const rule of rules) {
       if (rule.regex == null || rule.regex === "") {
         console.error("Rule does not have a regex: ", rule);
@@ -50,8 +50,22 @@ class RuleMatcherUtil {
         continue;
       }
       const regex = this.getCompiledRegex(rule.regex);
-      if (regex.test(file.name)) {
-        return rule;
+
+      // Check if rule is YAML based
+      if (rule.yaml) {
+        const cache = app.metadataCache.getFileCache(file);
+        const frontmatter = cache?.frontmatter;
+        if (frontmatter && frontmatter[rule.yaml]) {
+          const value = String(frontmatter[rule.yaml]);
+          if (regex.test(value)) {
+            return rule;
+          }
+        }
+      } else {
+        // Fallback to name based matching
+        if (regex.test(file.name)) {
+          return rule;
+        }
       }
     }
     return null;
@@ -97,11 +111,20 @@ class RuleMatcherUtil {
    * @param rule
    * @returns string[]
    */
-  public getGroupMatches(file: TFile, rule: MovingRule): RegExpMatchArray | null {
+  public getGroupMatches(file: TFile, app: App, rule: MovingRule): RegExpMatchArray | null {
     const regex = this.getCompiledRegex(rule.regex);
-    // console.log("Compiled regex: ", regex);
-    const matches = file.name.match(regex);
-    return matches;
+
+    if (rule.yaml) {
+      const cache = app.metadataCache.getFileCache(file);
+      const frontmatter = cache?.frontmatter;
+      if (frontmatter && frontmatter[rule.yaml]) {
+        const value = String(frontmatter[rule.yaml]);
+        return value.match(regex);
+      }
+      return null;
+    }
+
+    return file.name.match(regex);
   }
 
   public getGroupMatchesForTags(tags: TagCache[], rule: MovingRule): RegExpMatchArray | null {

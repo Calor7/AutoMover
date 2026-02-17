@@ -39,6 +39,10 @@ export function projectSection(containerEl: HTMLElement, plugin: AutoMoverPlugin
     cls: "rule margig_right",
   });
   projectHeader.createEl("p", {
+    text: "YAML Key",
+    cls: "rule_title",
+  });
+  projectHeader.createEl("p", {
     text: "Project name",
     cls: "rule_title",
   });
@@ -73,6 +77,15 @@ export function projectSection(containerEl: HTMLElement, plugin: AutoMoverPlugin
       project.collapsed = !movingRulesDetails.open;
       await plugin.saveData(plugin.settings);
     });
+
+    movingRulesSummary.createEl("input", {
+      value: project.yaml || "",
+      cls: "rule_input",
+      placeholder: "Project",
+    }).onchange = (e) => {
+      project.yaml = (e.target as HTMLInputElement).value;
+      debouncedSave();
+    };
 
     movingRulesSummary.createEl("input", {
       value: project.projectName,
@@ -123,8 +136,18 @@ export function projectSection(containerEl: HTMLElement, plugin: AutoMoverPlugin
     for (const rule of project.rules) {
       const child = movingRules.createDiv({ cls: "project_rule" });
       child.createEl("input", {
+        value: rule.yaml || "",
+        cls: "rule_input",
+        placeholder: "YAML Key (e.g. Status)",
+      }).onchange = (e) => {
+        rule.yaml = (e.target as HTMLInputElement).value;
+        debouncedSave();
+      };
+
+      child.createEl("input", {
         value: rule.regex,
         cls: "rule_input",
+        placeholder: "Regex/Value Pattern",
       }).onchange = (e) => {
         rule.regex = (e.target as HTMLInputElement).value;
         debouncedSave();
@@ -132,6 +155,7 @@ export function projectSection(containerEl: HTMLElement, plugin: AutoMoverPlugin
       child.createEl("input", {
         value: rule.folder,
         cls: "rule_input",
+        placeholder: "Destination Folder",
       }).onchange = (e) => {
         rule.folder = (e.target as HTMLInputElement).value;
         debouncedSave();

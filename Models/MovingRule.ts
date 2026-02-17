@@ -23,8 +23,15 @@ export class MovingRule {
    */
   public folder: string;
 
-  constructor(regex?: string, folder?: string) {
+  /**
+   * This field is used for defining the yaml key that will be used for matching
+   * If this field is set, the regex will be used to match the value of the yaml key
+   */
+  public yaml: string;
+
+  constructor(regex?: string, folder?: string, yaml?: string) {
     this.regex = regex || "";
     this.folder = folder || "";
+    this.yaml = yaml || "";
   }
 }

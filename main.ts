@@ -36,7 +36,7 @@ export default class AutoMoverPlugin extends obsidian.Plugin {
 
     this.registerEvent(
       // since i am defining my own event, ts-lint is crying about it but it works in the end
-      this.app.workspace.on("AutoMover:automatic-moving-update", () => {
+      (this.app.workspace as any).on("AutoMover:automatic-moving-update", () => {
         // console.log("Automatic moving update");
         this.automaticMoving();
       }),
@@ -117,11 +117,11 @@ export default class AutoMoverPlugin extends obsidian.Plugin {
    * @returns true if the file was moved, false otherwise
    */
   matchAndMoveByName(file: obsidian.TFile): boolean {
-    const rule = ruleMatcherUtil.getMatchingRuleByName(file, this.settings.movingRules);
+    const rule = ruleMatcherUtil.getMatchingRuleByName(file, this.app, this.settings.movingRules);
     if (rule == null || rule.folder == null) return false;
 
     if (ruleMatcherUtil.isRegexGrouped(rule)) {
-      const matches = ruleMatcherUtil.getGroupMatches(file, rule);
+      const matches = ruleMatcherUtil.getGroupMatches(file, this.app, rule);
       const finalDestinationPath = ruleMatcherUtil.constructFinalDesinationPath(rule, matches!);
       movingUtil.moveFile(file, finalDestinationPath);
     } else {
@@ -158,42 +158,43 @@ export default class AutoMoverPlugin extends obsidian.Plugin {
   }
 
   matchAndMoveByProject(file: obsidian.TFile): boolean {
-    const cache = this.app.metadataCache.getFileCache(file);
-    if (cache == null) return false;
-    if (cache.frontmatter == null) return false;
-    if (cache.frontmatter.Project == null && cache.frontmatter.project == null) return false;
+    const result: { rule: import("Models/ProjectRule").ProjectRule, matches: RegExpMatchArray | null } | null = projectMatcherUtil.getMatchingProjectRule(file, this.app, this.settings.projectRules);
+    if (result == null) return false;
 
-    const projectName: string = cache.frontmatter.Project || cache.frontmatter.project;
+    const projectRule = result.rule;
+    const projectMatches = result.matches;
 
-    const projectRule = projectMatcherUtil.getMatchingProjectRule(projectName, this.settings.projectRules);
     if (projectRule == null || projectRule.folder == null) return false;
 
     // If no rules defined, move to project root
     if (projectRule.rules == null || projectRule.rules.length === 0) {
       console.log("No rules defined, moving to project root");
-      movingUtil.moveFile(file, projectRule.folder);
+      const finalDestinationPath = projectMatcherUtil.constructProjectDestinationPath(projectRule, "", projectMatches);
+      console.log(`Moving to: ${finalDestinationPath}`);
+      movingUtil.moveFile(file, finalDestinationPath);
       return true;
     }
 
-    const rule = ruleMatcherUtil.getMatchingRuleByName(file, projectRule.rules);
+    const rule = ruleMatcherUtil.getMatchingRuleByName(file, this.app, projectRule.rules);
 
     // If no rule matches or folder is "./", move to project root
     if (rule == null || rule.folder === "./") {
       console.log("No matching rule or './' destination, moving to project root");
-      movingUtil.moveFile(file, projectRule.folder);
+      const finalDestinationPath = projectMatcherUtil.constructProjectDestinationPath(projectRule, "", projectMatches);
+      movingUtil.moveFile(file, finalDestinationPath);
       return true;
     }
 
     // console.log("Project rule's moving rule found: ", rule);
 
     if (ruleMatcherUtil.isRegexGrouped(rule)) {
-      const matches = ruleMatcherUtil.getGroupMatches(file, rule);
+      const matches = ruleMatcherUtil.getGroupMatches(file, this.app, rule);
       const ruleDesinationPath = ruleMatcherUtil.constructFinalDesinationPath(rule, matches!);
-      const finalDestinationPath = projectMatcherUtil.constructProjectDestinationPath(projectRule, ruleDesinationPath);
+      const finalDestinationPath = projectMatcherUtil.constructProjectDestinationPath(projectRule, ruleDesinationPath, projectMatches);
 
       movingUtil.moveFile(file, finalDestinationPath);
     } else {
-      const finalDestinationPath = projectMatcherUtil.constructProjectDestinationPath(projectRule, rule.folder);
+      const finalDestinationPath = projectMatcherUtil.constructProjectDestinationPath(projectRule, rule.folder, projectMatches);
 
       movingUtil.moveFile(file, finalDestinationPath);
     }
